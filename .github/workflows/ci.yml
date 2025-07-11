@@ -18,29 +18,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Step 2: Clone SecretScan repo with Dockerfile and rules.toml
-      # Old image: git clone --branch TESTING https://github.com/PoorneshORG/SecretScan.git secret-scan
-      - name: Clone SecretScan repo (Dockerfile + rules)
-        run: |
-          git clone --branch dockerwithrules https://github.com/PoorneshORG/SecretScan.git secret-scan
-
-      - name: Build Gitleaks Docker image with custom rules
-        run: |
-          docker build -t gitleaks-custom -f secret-scan/Dockerfile secret-scan
-
-
-      # - name: Build Gitleaks Docker image with custom rules
-      #   run: |
-      #     docker build -t gitleaks-custom -f ./Dockerfile .
-
-      - name: Run Gitleaks - custom rules
-        run: |
-          docker run --rm \
-            -v ${{ github.workspace }}:/app \
-            -w /app \
-            gitleaks-custom detect \
-              --source=/app \
-              --config=/app/secret-scan/rules.toml \
-              --no-git \
-              --verbose \
-              --exit-code 1 || true
+      - name: 🔐 Gitleaks Secret Scan & DefectDojo Upload
+        uses: PoorneshORG/gitleaks-scan@dojoaction
+        continue-on-error: true
+        with:
+          dojo-url: ${{ secrets.DEFECTDOJO_URL }}
+          dojo-api-key: ${{ secrets.DEFECTDOJO_API_KEY }}
+          product-name: DevSecOps
+          report-file: gitleaks-report.json
+          repo-name: ${{ github.repository }}
+          test-title: ${{ github.ref_name }}-${{ github.sha }}
